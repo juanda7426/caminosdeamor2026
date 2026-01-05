@@ -1,0 +1,15 @@
+.img-card-beneficios{
+    width: auto;
+    height: 300px;
+}
+
+.tarjeta{
+  box-shadow: 5px 4px 12px #323232;
+  max-height: 800px;
+}
+
+.titulos{
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+}

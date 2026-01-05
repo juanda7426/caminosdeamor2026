@@ -1,0 +1,30 @@
+.corporate-title {
+	color: #0087b7;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.slider-card {
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+	border-radius: 15px;
+	overflow: hidden;
+}
+
+.slider-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 10px 20px rgba(0, 135, 183, 0.2) !important;
+}
+
+.main-color {
+	color: #0087b7;
+}
+
+.swiper-pagination-bullet-active {
+	background-color: #0087b7 !important;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+	color: #0087b7 !important;
+}

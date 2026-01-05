@@ -1,0 +1,28 @@
+.qrBtn {
+    width: 400px;
+    background: #fff;
+    border: 1px solid #838383;
+    border-radius: 50px;
+    padding: 8px;
+    font-size: 2em;
+    font-weight: 700;
+    text-shadow: 1.5px 2px 2px #0087b7;
+    color: #4b4b4b;
+    cursor: pointer;
+    box-shadow: 5px 4px 8px #0087b7;
+}
+
+.qrBtn:hover {
+    color: #0087b7;
+    box-shadow: 5px 4px 8px #0087b7;
+}
+
+/* /* Media queries */
+
+@media (width<=768px) {
+    .qrBtn {
+        width: 300px;
+        font-size: 1.5em;
+        box-shadow: 3px 3px 13px #0087b7;
+    }
+}
