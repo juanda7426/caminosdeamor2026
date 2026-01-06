@@ -16,10 +16,12 @@ export const Home = () => {
 			try {
 				const promosCol = collection(db, "promotions");
 				const promoSnapshot = await getDocs(promosCol);
-				const promoList = promoSnapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
-				}));
+				const promoList = promoSnapshot.docs
+					.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}))
+					.filter((p) => p.isActive !== false); // Default to active if field missing
 				setPromociones(promoList);
 			} catch (error) {
 				console.error("Error fetching promos:", error);

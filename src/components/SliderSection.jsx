@@ -1,6 +1,7 @@
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import logo from "../img/logoLov.jpg";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -29,26 +30,27 @@ export const SliderSection = ({ title, items, id }) => {
 				slidesPerView={1}
 				navigation
 				pagination={{ clickable: true }}
-				autoplay={{ delay: 3500, disableOnInteraction: false }}
+				autoplay={{ delay: 4000, disableOnInteraction: false }}
 				breakpoints={{
 					640: {
 						slidesPerView: 2,
 					},
-					992: {
+					1024: {
 						slidesPerView: 3,
 					},
 				}}
-				className='mySwiper px-3 py-4'>
+				className='modern-swiper px-2 py-5'>
 				{items.map((item, index) => (
-					<SwiperSlide key={index} className='pb-5'>
-						<div className='card h-100 shadow-sm border-0 slider-card bg-white'>
-							<div style={{ height: "220px", overflow: "hidden" }}>
-								<img src={item.image} className='card-img-top w-100 h-100' alt={item.title} style={{ objectFit: "cover" }} />
-							</div>
-							<div className='card-body text-center'>
-								<h5 className='card-title main-color fw-bold'>{item.title}</h5>
-								{item.description && <p className='card-text text-muted small'>{item.description}</p>}
-								{/* <button className='btn btn-outline-primary btn-sm rounded-pill mt-2'>Ver más</button> */}
+					<SwiperSlide key={index}>
+						<div className='modern-slider-card'>
+							<div className='card-image-wrapper'>
+								<img src={item.image ? item.image : logo} className='card-img-modern' alt={item.title} />
+								<div className='card-overlay-gradient'>
+									<div className='overlay-content'>
+										<h4 className='overlay-title'>{item.title}</h4>
+										{item.description && <p className='overlay-description'>{item.description}</p>}
+									</div>
+								</div>
 							</div>
 						</div>
 					</SwiperSlide>
