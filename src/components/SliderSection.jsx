@@ -56,7 +56,7 @@ export const SliderSection = ({ title, items, id }) => {
 				slidesPerView={1}
 				navigation
 				pagination={{ clickable: true }}
-				autoplay={{ delay: 4000, disableOnInteraction: false }}
+				autoplay={{ delay: 40000, disableOnInteraction: false }}
 				breakpoints={{
 					640: {
 						slidesPerView: 2,

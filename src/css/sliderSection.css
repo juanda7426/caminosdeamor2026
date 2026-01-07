@@ -20,13 +20,14 @@
 }
 
 /* Click hint */
+/* .modern-slider-card::after { */
 .modern-slider-card::after {
 	content: "Ver";
 	position: absolute;
 	bottom: 15px;
 	right: 15px;
-	background: rgba(0, 135, 183, 0.95);
-	color: white;
+	color: rgba(0, 135, 183, 0.95);
+	background: white;
 	padding: 8px 16px;
 	border-radius: 20px;
 	font-size: 0.8rem;
@@ -57,7 +58,7 @@
 }
 
 .modern-slider-card:hover .card-img-modern {
-	transform: scale(1.15);
+	transform: scale(1.05);
 }
 
 .card-overlay-gradient {
@@ -99,7 +100,7 @@
 }
 
 .overlay-description {
-	font-size: 0.95rem;
+	font-size: 1rem;
 	line-height: 1.5;
 	margin: 0;
 	opacity: 0.85;
@@ -116,6 +117,7 @@
 	opacity: 1;
 	-webkit-line-clamp: 5;
 	line-clamp: 5;
+	margin-bottom: 120px;
 }
 
 /* Responsive adjustments */

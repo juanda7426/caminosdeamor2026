@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const ModalPromos = ({ isOpen, onClose, promoData, onSave }) => {
+const ModalPromos = ({ isOpen, onClose, promoData, onSave, tipo }) => {
 	const [formData, setFormData] = useState({
 		title: "",
 		description: "",
@@ -65,7 +65,7 @@ const ModalPromos = ({ isOpen, onClose, promoData, onSave }) => {
 			<div className='modal-dialog modal-dialog-centered'>
 				<div className='modal-content'>
 					<div className='modal-header'>
-						<h5 className='modal-title fw-bold'>{promoData ? "Editar Promoción" : "Nueva Promoción"}</h5>
+						<h5 className='modal-title fw-bold'>{promoData ? "Editar " + tipo : "Nueva " + tipo}</h5>
 						<button type='button' className='btn-close' onClick={onClose}></button>
 					</div>
 

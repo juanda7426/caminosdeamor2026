@@ -15,6 +15,7 @@ import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/Dashboard";
 import ManageInfo from "./admin/ManageInfo";
 import ManagePromos from "./admin/ManagePromos";
+import ManageNovedades from "./admin/ManageNovedades";
 import ManagePartners from "./admin/ManagePartners"; // New
 import ManagePlans from "./admin/ManagePlans"; // New
 
@@ -41,6 +42,7 @@ export const App = () => {
 						<Route index element={<Dashboard />} />
 						<Route path='dashboard' element={<Dashboard />} />
 						<Route path='promos' element={<ManagePromos />} />
+						<Route path='novedades' element={<ManageNovedades />} />
 						<Route path='info' element={<ManageInfo />} />
 						<Route path='convenios' element={<ManagePartners />} />
 						<Route path='planes' element={<ManagePlans />} />

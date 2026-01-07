@@ -1,0 +1,50 @@
+.admin-layout {
+	display: flex;
+	min-height: 100vh;
+}
+
+.admin-aside {
+	width: 130px;
+	background: #333;
+	color: #fff;
+	padding: 5px 0px;
+}
+
+.admin-aside h4 {
+	margin-bottom: 12px;
+	text-align: center;
+	font-weight: 700;
+	font-size: 1.5rem;
+	color: rgba(2, 196, 255, 1);
+}
+
+.admin-aside nav ul {
+	list-style: none;
+	display: block;
+	padding: 5px 0;
+}
+
+.admin-aside nav ul li {
+	margin-bottom: 10px;
+}
+
+.link {
+	font-size: 0.95rem;
+	text-decoration: none;
+	color: rgba(2, 196, 255, 1);
+	display: block;
+	text-align: center;
+	padding: 5px;
+}
+
+.link:hover {
+	background-color: rgba(2, 196, 255, 1);
+	color: #333;
+	font-weight: 700;
+}
+
+.link-active {
+	background-color: rgba(2, 196, 255, 1);
+	color: #333;
+	font-weight: 700;
+}

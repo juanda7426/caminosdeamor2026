@@ -9,7 +9,9 @@ import { collection, getDocs } from "firebase/firestore";
 export const Home = () => {
 	const logo = "../../img/logoS.png";
 	const [promociones, setPromociones] = useState([]);
+	const [novedades, setNovedades] = useState([]);
 
+	//********************** */
 	// Fetch Promos from Firebase
 	useEffect(() => {
 		const fetchPromos = async () => {
@@ -31,18 +33,31 @@ export const Home = () => {
 		fetchPromos();
 	}, []);
 
+	// Fetch Novedades from Firebase
+	useEffect(() => {
+		const fetchNovedades = async () => {
+			try {
+				const novedadesCol = collection(db, "novedades");
+				const novedadesSnapshot = await getDocs(novedadesCol);
+				const novedadesList = novedadesSnapshot.docs
+					.map((doc) => ({
+						id: doc.id,
+						...doc.data(),
+					}))
+					.filter((n) => n.isActive !== false); // Default to active if field missing
+				setNovedades(novedadesList);
+			} catch (error) {
+				console.error("Error fetching novedades:", error);
+			}
+		};
+
+		fetchNovedades();
+	}, []);
+
 	// Datos simulados para los sliders (puedes reemplazarlos con datos reales o de Firebase)
 	/* const promociones = [ ... ] (Removed hardcoded data) */
 
-	const convenios = [
-		{ title: "Clínica Veterinaria", description: "Cuida a tu mascota con los mejores especialistas.", image: "../../img/Veterinario.jpg" },
-		{ title: "Odontología", description: "Sonrisas brillantes para toda la familia.", image: "../../img/odontologia.jpg" },
-		{ title: "Medicina General", description: "Atención médica de calidad cuando la necesitas.", image: "../../img/doctor.jpg" },
-		{ title: "Laboratorio Clínico", description: "Exámenes rápidos y confiables.", image: "../../img/lboratorio.jpg" },
-		{ title: "Óptica Visión", description: "Salud visual al alcance de todos.", image: "../../img/optica1.jpg" },
-		{ title: "Estudios CENSA", description: "Beneficios educativos para afiliados.", image: "../../img/censa.jpg" },
-	];
-
+	//********************** */
 	return (
 		<div style={{ overflowX: "hidden" }}>
 			<FloatingWhatsApp
@@ -73,7 +88,13 @@ export const Home = () => {
 			</div>
 
 			<div className='bg-white'>
-				<SliderSection title='Convenios y Beneficios' items={convenios} id='convenios' />
+				{novedades.length > 0 ? (
+					<SliderSection title='Novedades' items={novedades} id='novedades' />
+				) : (
+					<div className='text-center p-5'>
+						<p>Cargando novedades...</p>
+					</div>
+				)}
 			</div>
 		</div>
 	);

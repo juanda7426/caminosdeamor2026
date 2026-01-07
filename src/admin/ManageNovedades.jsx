@@ -4,12 +4,12 @@ import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import ModalPromos from "../components/modales/ModalPromos";
 
-const ManagePromos = () => {
-	const [promos, setPromos] = useState([]);
+const ManageNovedades = () => {
+	const [novedades, setNovedades] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [editingId, setEditingId] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [newPromo, setNewPromo] = useState({
+	const [newNovedad, setNewNovedad] = useState({
 		title: "",
 		description: "",
 		image: "",
@@ -18,15 +18,15 @@ const ManagePromos = () => {
 	const [imageFile, setImageFile] = useState(null);
 	const [previewUrl, setPreviewUrl] = useState("");
 
-	const promosCollectionRef = collection(db, "promotions");
-	const CACHE_KEY = "promos_cache";
+	const novedadesCollectionRef = collection(db, "novedades");
+	const CACHE_KEY = "novedades_cache";
 
 	//************************ */
 	// Cache Helper Functions
-	const savePromosToCache = (promosData) => {
+	const saveNovedadesToCache = (novedadesData) => {
 		try {
 			const cacheData = {
-				data: promosData,
+				data: novedadesData,
 				timestamp: new Date().getTime(),
 			};
 			localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
@@ -35,7 +35,7 @@ const ManagePromos = () => {
 		}
 	};
 
-	const getPromosFromCache = () => {
+	const getNovedadesFromCache = () => {
 		try {
 			const cached = localStorage.getItem(CACHE_KEY);
 			if (cached) {
@@ -48,15 +48,15 @@ const ManagePromos = () => {
 		return null;
 	};
 
-	// Fetch Promos
-	const getPromos = async (forceRefresh = false) => {
+	// Fetch Novedades
+	const getNovedades = async (forceRefresh = false) => {
 		setLoading(true);
 		try {
 			// Try to load from cache first if not forcing refresh
 			if (!forceRefresh) {
-				const cachedPromos = getPromosFromCache();
-				if (cachedPromos) {
-					setPromos(cachedPromos);
+				const cachedNovedades = getNovedadesFromCache();
+				if (cachedNovedades) {
+					setNovedades(cachedNovedades);
 					setLoading(false);
 					// Optionally fetch in background to update cache
 					fetchAndUpdateCache();
@@ -65,16 +65,16 @@ const ManagePromos = () => {
 			}
 
 			// Fetch from Firebase
-			const data = await getDocs(promosCollectionRef);
-			const promosData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-			setPromos(promosData);
-			savePromosToCache(promosData);
+			const data = await getDocs(novedadesCollectionRef);
+			const novedadesData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			setNovedades(novedadesData);
+			saveNovedadesToCache(novedadesData);
 		} catch (error) {
-			console.error("Error al obtener promociones:", error);
+			console.error("Error al obtener novedades:", error);
 			// Try to use cache as fallback
-			const cachedPromos = getPromosFromCache();
-			if (cachedPromos) {
-				setPromos(cachedPromos);
+			const cachedNovedades = getNovedadesFromCache();
+			if (cachedNovedades) {
+				setNovedades(cachedNovedades);
 			}
 		} finally {
 			setLoading(false);
@@ -84,11 +84,11 @@ const ManagePromos = () => {
 	// Background fetch to update cache
 	const fetchAndUpdateCache = async () => {
 		try {
-			const data = await getDocs(promosCollectionRef);
-			const promosData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-			savePromosToCache(promosData);
+			const data = await getDocs(novedadesCollectionRef);
+			const novedadesData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			saveNovedadesToCache(novedadesData);
 			// Update state only if data changed
-			setPromos(promosData);
+			setNovedades(novedadesData);
 		} catch (error) {
 			console.error("Error updating cache:", error);
 		}
@@ -115,7 +115,7 @@ const ManagePromos = () => {
 	};
 
 	useEffect(() => {
-		getPromos();
+		getNovedades();
 	}, []);
 
 	// Handle Image Selection
@@ -127,7 +127,7 @@ const ManagePromos = () => {
 		}
 	};
 
-	// Create or Update Promo
+	// Create or Update Novedad
 	const handleSubmit = async (formData, imageFileFromModal) => {
 		if (!formData.title || !formData.description) return alert("Llena todos los campos");
 
@@ -142,12 +142,12 @@ const ManagePromos = () => {
 
 			// Upload image if a new one is selected
 			if (imageFileFromModal) {
-				const storageRef = ref(storage, `promotions/${Date.now()}_${imageFileFromModal.name}`);
+				const storageRef = ref(storage, `novedades/${Date.now()}_${imageFileFromModal.name}`);
 				await uploadBytes(storageRef, imageFileFromModal);
 				imageUrl = await getDownloadURL(storageRef);
 			}
 
-			const promoData = {
+			const novedadData = {
 				title: formData.title,
 				description: formData.description,
 				image: imageUrl,
@@ -156,76 +156,76 @@ const ManagePromos = () => {
 			};
 
 			if (editingId) {
-				const promoDoc = doc(db, "promotions", editingId);
-				await updateDoc(promoDoc, promoData);
+				const novedadDoc = doc(db, "novedades", editingId);
+				await updateDoc(novedadDoc, novedadData);
 
 				// Delete old image from storage if a new one was uploaded
 				if (oldImageUrl && imageFileFromModal) {
 					await deleteImageFromStorage(oldImageUrl);
 				}
 
-				alert("Promoción actualizada con éxito!");
+				alert("Novedad actualizada con éxito!");
 			} else {
-				await addDoc(promosCollectionRef, { ...promoData, createdAt: new Date() });
-				alert("Promoción agregada!");
+				await addDoc(novedadesCollectionRef, { ...novedadData, createdAt: new Date() });
+				alert("Novedad agregada!");
 			}
 
 			resetForm();
 			setIsModalOpen(false);
-			getPromos(true); // Force refresh from Firebase after changes
+			getNovedades(true); // Force refresh from Firebase after changes
 		} catch (error) {
 			console.error("Error al guardar:", error);
-			alert("Error al guardar la promoción");
+			alert("Error al guardar la novedad");
 		}
 	};
 
 	const resetForm = () => {
-		setNewPromo({ title: "", description: "", image: "", isActive: true });
+		setNewNovedad({ title: "", description: "", image: "", isActive: true });
 		setImageFile(null);
 		setPreviewUrl("");
 		setEditingId(null);
 	};
 
 	// Start Editing
-	const startEdit = (promo) => {
-		setEditingId(promo.id);
-		setNewPromo({
-			title: promo.title,
-			description: promo.description,
-			image: promo.image,
-			isActive: promo.isActive ?? true,
+	const startEdit = (novedad) => {
+		setEditingId(novedad.id);
+		setNewNovedad({
+			title: novedad.title,
+			description: novedad.description,
+			image: novedad.image,
+			isActive: novedad.isActive ?? true,
 		});
-		setPreviewUrl(promo.image);
+		setPreviewUrl(novedad.image);
 		setIsModalOpen(true);
 	};
 
 	// Toggle Status
 	const toggleStatus = async (id, currentStatus) => {
 		try {
-			const promoDoc = doc(db, "promotions", id);
-			await updateDoc(promoDoc, { isActive: !currentStatus });
-			getPromos(true); // Force refresh from Firebase after changes
+			const novedadDoc = doc(db, "novedades", id);
+			await updateDoc(novedadDoc, { isActive: !currentStatus });
+			getNovedades(true); // Force refresh from Firebase after changes
 		} catch (error) {
 			console.error("Error toggling status:", error);
 		}
 	};
 
-	// Delete Promo
-	const deletePromo = async (id) => {
-		if (window.confirm("¿Seguro que quieres eliminar esta promo?")) {
+	// Delete Novedad
+	const deleteNovedad = async (id) => {
+		if (window.confirm("¿Seguro que quieres eliminar esta novedad?")) {
 			try {
-				// Find the promo to get its image URL
-				const promoToDelete = promos.find((p) => p.id === id);
+				// Find the novedad to get its image URL
+				const novedadToDelete = novedades.find((n) => n.id === id);
 
 				// Delete the document from Firestore
-				await deleteDoc(doc(db, "promotions", id));
+				await deleteDoc(doc(db, "novedades", id));
 
 				// Delete the image from storage if it exists
-				if (promoToDelete && promoToDelete.image) {
-					await deleteImageFromStorage(promoToDelete.image);
+				if (novedadToDelete && novedadToDelete.image) {
+					await deleteImageFromStorage(novedadToDelete.image);
 				}
 
-				getPromos(true); // Force refresh from Firebase after changes
+				getNovedades(true); // Force refresh from Firebase after changes
 			} catch (error) {
 				console.error("Error al eliminar:", error);
 			}
@@ -236,10 +236,10 @@ const ManagePromos = () => {
 	return (
 		<div style={{ padding: "20px" }}>
 			<div className='d-flex justify-content-between align-items-center mb-4'>
-				<h1 className='fw-bold main-color mb-0'>Panel de Promociones</h1>
+				<h1 className='fw-bold main-color mb-0'>Panel de Novedades</h1>
 				<button
 					className='btn btn-sm'
-					title='Agregar nueva promoción'
+					title='Agregar nueva novedad'
 					style={{ backgroundColor: "#5C636A", color: "#ffffffff", border: "none" }}
 					onClick={() => {
 						resetForm();
@@ -253,21 +253,21 @@ const ManagePromos = () => {
 			<div className='row g-4'>
 				{/* List Section */}
 				<div className='col-12'>
-					<h3 className='mb-4'>Promociones Existentes ({promos.length})</h3>
+					<h3 className='mb-4'>Novedades Existentes ({novedades.length})</h3>
 					{loading ? (
 						<div className='text-center py-5'>
 							<div className='spinner-border text-primary' role='status'></div>
 						</div>
 					) : (
 						<div className='row g-3'>
-							{promos.map((promo) => (
-								<div key={promo.id} className='col-md-6'>
+							{novedades.map((novedad) => (
+								<div key={novedad.id} className='col-md-6'>
 									<div className='card shadow-sm border-0 overflow-hidden h-100 position-relative'>
 										<div className='row g-0'>
 											<div className='col-md-4' style={{ height: "150px" }}>
 												<img
-													src={promo.image ? promo.image : "../img/logoLov.jpg"}
-													alt={promo.title}
+													src={novedad.image ? novedad.image : "../img/logoLov.jpg"}
+													alt={novedad.title}
 													className='w-100 h-100'
 													style={{ objectFit: "cover" }}
 												/>
@@ -275,8 +275,10 @@ const ManagePromos = () => {
 											<div className='col-md-8 px-3 py-2 d-flex flex-column justify-content-between'>
 												<div>
 													<div className='d-flex justify-content-between align-items-start'>
-														<h5 className='fw-bold mb-1'>{promo.title}</h5>
-														<span className={`badge ${promo.isActive ? "bg-success" : "bg-danger"}`}>{promo.isActive ? "Activa" : "Inactiva"}</span>
+														<h5 className='fw-bold mb-1'>{novedad.title}</h5>
+														<span className={`badge ${novedad.isActive ? "bg-success" : "bg-danger"}`}>
+															{novedad.isActive ? "Activa" : "Inactiva"}
+														</span>
 													</div>
 													<p
 														className='small text-muted mb-2'
@@ -286,13 +288,13 @@ const ManagePromos = () => {
 															WebkitBoxOrient: "vertical",
 															overflow: "hidden",
 														}}>
-														{promo.description}
+														{novedad.description}
 													</p>
 												</div>
 												<div className='d-flex gap-1'>
 													<button
 														className='btn btn-sm btn-light text-secondary border-0'
-														onClick={() => startEdit(promo)}
+														onClick={() => startEdit(novedad)}
 														title='Editar'
 														style={{
 															width: "32px",
@@ -305,9 +307,9 @@ const ManagePromos = () => {
 														<i className='fas fa-pencil-alt' style={{ fontSize: "0.85rem" }}></i>
 													</button>
 													<button
-														className={`btn btn-sm btn-light border-0 ${promo.isActive ? "text-warning" : "text-success"}`}
-														onClick={() => toggleStatus(promo.id, promo.isActive)}
-														title={promo.isActive ? "Desactivar" : "Activar"}
+														className={`btn btn-sm btn-light border-0 ${novedad.isActive ? "text-warning" : "text-success"}`}
+														onClick={() => toggleStatus(novedad.id, novedad.isActive)}
+														title={novedad.isActive ? "Desactivar" : "Activar"}
 														style={{
 															width: "32px",
 															height: "32px",
@@ -316,11 +318,11 @@ const ManagePromos = () => {
 															justifyContent: "center",
 															borderRadius: "8px",
 														}}>
-														<i className={`fas ${promo.isActive ? "fa-eye-slash" : "fa-eye"}`} style={{ fontSize: "0.85rem" }}></i>
+														<i className={`fas ${novedad.isActive ? "fa-eye-slash" : "fa-eye"}`} style={{ fontSize: "0.85rem" }}></i>
 													</button>
 													<button
 														className='btn btn-sm btn-light text-danger border-0'
-														onClick={() => deletePromo(promo.id)}
+														onClick={() => deleteNovedad(novedad.id)}
 														title='Eliminar'
 														style={{
 															width: "32px",
@@ -338,9 +340,9 @@ const ManagePromos = () => {
 									</div>
 								</div>
 							))}
-							{promos.length === 0 && (
+							{novedades.length === 0 && (
 								<div className='text-center py-5 bg-light rounded border'>
-									<p className='mb-0'>Aún no hay promociones configuradas.</p>
+									<p className='mb-0'>Aún no hay novedades configuradas.</p>
 								</div>
 							)}
 						</div>
@@ -355,12 +357,12 @@ const ManagePromos = () => {
 					setIsModalOpen(false);
 					resetForm();
 				}}
-				promoData={editingId ? newPromo : null}
+				promoData={editingId ? newNovedad : null}
 				onSave={handleSubmit}
-				tipo='Promoción'
+				tipo='Novedad'
 			/>
 		</div>
 	);
 };
 
-export default ManagePromos;
+export default ManageNovedades;

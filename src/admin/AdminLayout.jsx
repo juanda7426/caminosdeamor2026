@@ -1,7 +1,7 @@
 import React from "react";
-import { Navigate, Outlet, Link } from "react-router-dom";
+import { Navigate, Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-// import '../css/Admin.css'; // We will create this later
+import "../css/adminLayout.css";
 
 const AdminLayout = () => {
 	const { currentUser } = useAuth();
@@ -11,35 +11,41 @@ const AdminLayout = () => {
 	}
 
 	return (
-		<div className='admin-layout' style={{ display: "flex", minHeight: "100vh" }}>
-			<aside style={{ width: "170px", background: "#333", color: "#fff", padding: "20px" }}>
-				<h3>Panel Admin</h3>
-				<nav>
-					<ul style={{ listStyle: "none", padding: 0 }}>
+		<div className='admin-layout'>
+			<aside className='admin-aside'>
+				<h4 className='admin-title'>Panel Admin</h4>
+				<hr />
+				<nav className='mt-4'>
+					<ul>
 						<li>
-							<Link to='/admin/dashboard' style={{ color: "white", display: "block", padding: "10px 0" }}>
+							<NavLink to='/admin/dashboard' className={({ isActive }) => (isActive ? "link link-active" : "link")}>
 								Dashboard
-							</Link>
+							</NavLink>
 						</li>
 						<li>
-							<Link to='/admin/promos' style={{ color: "white", display: "block", padding: "10px 0" }}>
-								Promociones
-							</Link>
+							<NavLink to='/admin/convenios' className={({ isActive }) => (isActive ? "link link-active" : "link")}>
+								Beneficios
+							</NavLink>
 						</li>
 						<li>
-							<Link to='/admin/convenios' style={{ color: "white", display: "block", padding: "10px 0" }}>
-								Convenios
-							</Link>
+							<NavLink to='/admin/info' className={({ isActive }) => (isActive ? "link link-active" : "link")}>
+								Info Empresa
+							</NavLink>
 						</li>
 						<li>
-							<Link to='/admin/planes' style={{ color: "white", display: "block", padding: "10px 0" }}>
+							<NavLink to='/admin/novedades' className={({ isActive }) => (isActive ? "link link-active" : "link")}>
+								Novedades
+							</NavLink>
+						</li>
+						<li>
+							<NavLink to='/admin/planes' className={({ isActive }) => (isActive ? "link link-active" : "link")}>
 								Planes
-							</Link>
+							</NavLink>
 						</li>
 						<li>
-							<Link to='/admin/info' style={{ color: "white", display: "block", padding: "10px 0" }}>
-								Info Contacto
-							</Link>
+							<NavLink to='/admin/promos' className={({ isActive }) => (isActive ? "link link-active" : "link")}>
+								Promociones
+							</NavLink>
 						</li>
 					</ul>
 				</nav>
