@@ -1,64 +1,207 @@
-import React, { useState, useEffect } from "react";
-import { db } from "../firebase-config";
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { db, storage } from "../firebase-config";
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import ModalPlans from "../components/modales/ModalPlans";
 
 const ManagePlans = () => {
 	const [plans, setPlans] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [editingId, setEditingId] = useState(null);
+	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [newPlan, setNewPlan] = useState({
 		name: "",
-		price: "",
 		description: "",
 		features: "",
+		image: "",
+		color: "#0087B7",
+		order: 0,
+		isActive: true,
 	});
 
 	const plansCollectionRef = collection(db, "plans");
+	const CACHE_KEY = "plans_cache";
+
+	//************************ */
+	// Cache Helper Functions
+	const savePlansToCache = (plansData) => {
+		try {
+			const cacheData = {
+				data: plansData,
+				timestamp: new Date().getTime(),
+			};
+			localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+		} catch (error) {
+			console.error("Error saving to cache:", error);
+		}
+	};
+
+	const getPlansFromCache = () => {
+		try {
+			const cached = localStorage.getItem(CACHE_KEY);
+			if (cached) {
+				const { data } = JSON.parse(cached);
+				return data;
+			}
+		} catch (error) {
+			console.error("Error reading from cache:", error);
+		}
+		return null;
+	};
 
 	// Fetch Plans
-	const getPlans = async () => {
+	const getPlans = async (forceRefresh = false) => {
 		setLoading(true);
 		try {
+			// Try to load from cache first if not forcing refresh
+			// console.log(forceRefresh);
+			if (!forceRefresh) {
+				const cachedPlans = getPlansFromCache();
+				if (cachedPlans) {
+					setPlans(cachedPlans);
+					setLoading(false);
+					fetchAndUpdateCache();
+					return;
+				}
+			}
+
 			const data = await getDocs(plansCollectionRef);
-			setPlans(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+			const plansData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id })).sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+			console.log("Planes obtenidos:", plansData);
+			setPlans(plansData);
+			savePlansToCache(plansData);
 		} catch (error) {
 			console.error("Error al obtener planes:", error);
+			const cachedPlans = getPlansFromCache();
+			if (cachedPlans) {
+				setPlans(cachedPlans);
+			}
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	useEffect(() => {
-		getPlans();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	// Create Plan
-	const createPlan = async (e) => {
-		e.preventDefault();
-		if (!newPlan.name || !newPlan.price) return alert("Llena al menos Nombre y Precio");
-
+	const fetchAndUpdateCache = async () => {
 		try {
-			await addDoc(plansCollectionRef, {
-				...newPlan,
-				// Convert features string to array if separated by punctuation or newlines
-				featuresList: newPlan.features.split("\n").filter((item) => item.trim() !== ""),
-			});
-			alert("Plan agregado!");
-			setNewPlan({ name: "", price: "", description: "", features: "" });
-			getPlans();
+			const data = await getDocs(plansCollectionRef);
+			const plansData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id })).sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+			savePlansToCache(plansData);
+			setPlans(plansData);
 		} catch (error) {
-			console.error("Error al crear:", error);
+			console.error("Error updating cache:", error);
 		}
 	};
 
-	// Delete Plan
+	const deleteImageFromStorage = async (imageUrl) => {
+		if (!imageUrl) return;
+		try {
+			const decodedUrl = decodeURIComponent(imageUrl);
+			const pathMatch = decodedUrl.match(/\/o\/(.+?)\?/);
+			if (pathMatch && pathMatch[1]) {
+				const imagePath = pathMatch[1];
+				const imageRef = ref(storage, imagePath);
+				await deleteObject(imageRef);
+			}
+		} catch (error) {
+			console.error("Error deleting image from storage:", error);
+		}
+	};
+
+	useEffect(() => {
+		getPlans();
+	}, []);
+
+	// Create or Update Plan
+	const handleSubmit = async (formData, imageFileFromModal) => {
+		if (!formData.name || !formData.description) return alert("Llena al menos Nombre y Descripción");
+
+		try {
+			let imageUrl = formData.image;
+			let oldImageUrl = null;
+
+			if (editingId && imageFileFromModal && formData.image) {
+				oldImageUrl = formData.image;
+			}
+
+			if (imageFileFromModal) {
+				const storageRef = ref(storage, `plans/${Date.now()}_${imageFileFromModal.name}`);
+				await uploadBytes(storageRef, imageFileFromModal);
+				imageUrl = await getDownloadURL(storageRef);
+			}
+
+			const planData = {
+				name: formData.name,
+				description: formData.description,
+				features: formData.features,
+				featuresList: formData.features.split("\n").filter((item) => item.trim() !== ""),
+				image: imageUrl,
+				color: formData.color || "#0087B7",
+				order: Number(formData.order) || 0,
+				isActive: formData.isActive,
+				updatedAt: new Date(),
+			};
+
+			if (editingId) {
+				const planDoc = doc(db, "plans", editingId);
+				await updateDoc(planDoc, planData);
+				if (oldImageUrl && imageFileFromModal) {
+					await deleteImageFromStorage(oldImageUrl);
+				}
+				alert("Plan actualizado con éxito!");
+			} else {
+				await addDoc(plansCollectionRef, { ...planData, createdAt: new Date() });
+				alert("Plan agregado!");
+			}
+
+			resetForm();
+			setIsModalOpen(false);
+			getPlans(true);
+		} catch (error) {
+			console.error("Error al guardar:", error);
+			alert("Error al guardar el plan");
+		}
+	};
+
+	const resetForm = () => {
+		setNewPlan({ name: "", description: "", features: "", image: "", color: "#0087B7", order: 0, isActive: true });
+		setEditingId(null);
+	};
+
+	const startEdit = (plan) => {
+		setEditingId(plan.id);
+		setNewPlan({
+			name: plan.name,
+			description: plan.description,
+			features: plan.features || "",
+			image: plan.image,
+			color: plan.color || "#0087B7",
+			order: plan.order || 0,
+			isActive: plan.isActive ?? true,
+		});
+		setIsModalOpen(true);
+	};
+
+	const toggleStatus = async (id, currentStatus) => {
+		try {
+			const planDoc = doc(db, "plans", id);
+			await updateDoc(planDoc, { isActive: !currentStatus });
+			getPlans(true);
+		} catch (error) {
+			console.error("Error toggling status:", error);
+		}
+	};
+
 	const deletePlan = async (id) => {
-		const confirm = window.confirm("¿Seguro que quieres eliminar este plan?");
-		if (confirm) {
+		if (window.confirm("¿Seguro que quieres eliminar este plan?")) {
 			try {
-				const planDoc = doc(db, "plans", id);
-				await deleteDoc(planDoc);
-				getPlans();
+				const planToDelete = plans.find((p) => p.id === id);
+				await deleteDoc(doc(db, "plans", id));
+				if (planToDelete && planToDelete.image) {
+					await deleteImageFromStorage(planToDelete.image);
+				}
+				getPlans(true);
 			} catch (error) {
 				console.error("Error al eliminar:", error);
 			}
@@ -66,107 +209,132 @@ const ManagePlans = () => {
 	};
 
 	return (
-		<div>
-			<h1>Gestión de Planes Exequiales</h1>
-			<div style={{ display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "flex-start" }}>
-				{/* Formulario */}
-				<div
-					style={{ background: "white", padding: "20px", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", flex: 1, minWidth: "300px" }}>
-					<h3>Nuevo Plan</h3>
-					<form onSubmit={createPlan}>
-						<div className='form-group'>
-							<label>Nombre del Plan</label>
-							<input
-								type='text'
-								placeholder='Ej: Plan Ocaso'
-								value={newPlan.name}
-								onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
-							/>
-						</div>
-						<div className='form-group'>
-							<label>Precio (Texto)</label>
-							<input
-								type='text'
-								placeholder='Ej: $1,200,000'
-								value={newPlan.price}
-								onChange={(e) => setNewPlan({ ...newPlan, price: e.target.value })}
-							/>
-						</div>
-						<div className='form-group'>
-							<label>Descripción Corta</label>
-							<input
-								type='text'
-								placeholder='Ej: Cobertura completa para...'
-								value={newPlan.description}
-								onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
-							/>
-						</div>
-						<div className='form-group'>
-							<label>Características (Una por línea)</label>
-							<textarea
-								placeholder='Ataúd de madera&#10;Sala de velación&#10;Arreglo floral'
-								value={newPlan.features}
-								onChange={(e) => setNewPlan({ ...newPlan, features: e.target.value })}
-								rows='5'
-								style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "4px" }}
-							/>
-						</div>
-						<button type='submit' className='btn-login'>
-							Agregar Plan
-						</button>
-					</form>
-				</div>
+		<div style={{ padding: "20px" }}>
+			<div className='d-flex justify-content-between align-items-center mb-4'>
+				<h1 className='fw-bold main-color mb-0'>Panel de Planes Exequiales</h1>
+				<button
+					className='btn btn-sm'
+					title='Agregar nuevo plan'
+					style={{ backgroundColor: "#5C636A", color: "#ffffffff", border: "none" }}
+					onClick={() => {
+						resetForm();
+						setIsModalOpen(true);
+					}}>
+					<i className='fas fa-plus me-2'></i>
+					Nueva
+				</button>
+			</div>
 
-				{/* Lista */}
-				<div style={{ flex: 1, minWidth: "300px" }}>
-					<h3>Planes Activos ({plans.length})</h3>
+			<div className='row g-4'>
+				<div className='col-12'>
+					<h3 className='mb-4'>Planes Existentes ({plans.length})</h3>
 					{loading ? (
-						<p>Cargando...</p>
+						<div className='text-center py-5'>
+							<div className='spinner-border text-primary' role='status'></div>
+						</div>
 					) : (
-						<div style={{ display: "grid", gap: "15px" }}>
+						<div className='row g-3'>
 							{plans.map((plan) => (
-								<div
-									key={plan.id}
-									style={{
-										background: "white",
-										padding: "15px",
-										borderRadius: "8px",
-										borderLeft: "5px solid #d1b06b",
-									}}>
-									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-										<h4 style={{ margin: 0 }}>{plan.name}</h4>
-										<span style={{ fontWeight: "bold", color: "#d1b06b", fontSize: "1.1rem" }}>{plan.price}</span>
+								<div key={plan.id} className='col-md-6'>
+									<div className='card shadow-sm border-0 overflow-hidden h-100 position-relative'>
+										<div className='row g-0'>
+											<div className='col-md-4' style={{ height: "180px", borderLeft: `5px solid ${plan.color || "#0087B7"}` }}>
+												<img
+													src={plan.image ? plan.image : "../img/logoLov.jpg"}
+													alt={plan.name}
+													className='w-100 h-100'
+													style={{ objectFit: "cover" }}
+												/>
+											</div>
+											<div className='col-md-8 px-3 py-2 d-flex flex-column justify-content-between'>
+												<div>
+													<div className='d-flex justify-content-between align-items-start'>
+														<h5 className='fw-bold mb-1'>{plan.name}</h5>
+														<span className={`badge ${plan.isActive ? "bg-success" : "bg-danger"}`}>{plan.isActive ? "Activa" : "Inactiva"}</span>
+													</div>
+													{/* <p className='fw-bold text-primary mb-1' style={{ color: "#0087b7" }}>
+														{plan.price}
+													</p> */}
+													<p
+														className='small text-muted mb-2'
+														style={{
+															display: "-webkit-box",
+															WebkitLineClamp: "2",
+															WebkitBoxOrient: "vertical",
+															overflow: "hidden",
+														}}>
+														{plan.description}
+													</p>
+												</div>
+												<div className='d-flex gap-1'>
+													<button
+														className='btn btn-sm btn-light text-secondary border-0'
+														onClick={() => startEdit(plan)}
+														title='Editar'
+														style={{
+															width: "32px",
+															height: "32px",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															borderRadius: "8px",
+														}}>
+														<i className='fas fa-pencil-alt' style={{ fontSize: "0.85rem" }}></i>
+													</button>
+													<button
+														className={`btn btn-sm btn-light border-0 ${plan.isActive ? "text-warning" : "text-success"}`}
+														onClick={() => toggleStatus(plan.id, plan.isActive)}
+														title={plan.isActive ? "Desactivar" : "Activar"}
+														style={{
+															width: "32px",
+															height: "32px",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															borderRadius: "8px",
+														}}>
+														<i className={`fas ${plan.isActive ? "fa-eye-slash" : "fa-eye"}`} style={{ fontSize: "0.85rem" }}></i>
+													</button>
+													<button
+														className='btn btn-sm btn-light text-danger border-0'
+														onClick={() => deletePlan(plan.id)}
+														title='Eliminar'
+														style={{
+															width: "32px",
+															height: "32px",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															borderRadius: "8px",
+														}}>
+														<i className='fas fa-trash-alt' style={{ fontSize: "0.85rem" }}></i>
+													</button>
+												</div>
+											</div>
+										</div>
 									</div>
-									<p style={{ margin: "0 0 10px 0", fontStyle: "italic", color: "#555" }}>{plan.description}</p>
-									<div style={{ marginBottom: "10px" }}>
-										<strong style={{ fontSize: "0.9rem" }}>Incluye:</strong>
-										<ul style={{ margin: "5px 0", paddingLeft: "20px", fontSize: "0.85rem", color: "#444" }}>
-											{(plan.featuresList || []).map((feature, idx) => (
-												<li key={idx}>{feature}</li>
-											))}
-										</ul>
-									</div>
-									<button
-										onClick={() => deletePlan(plan.id)}
-										style={{
-											background: "#fee2e2",
-											color: "#b91c1c",
-											border: "none",
-											padding: "5px 10px",
-											borderRadius: "4px",
-											cursor: "pointer",
-											float: "right",
-										}}>
-										Eliminar
-									</button>
-									<div style={{ clear: "both" }}></div>
 								</div>
 							))}
-							{plans.length === 0 && <p>No hay planes registrados.</p>}
+							{plans.length === 0 && (
+								<div className='text-center py-5 bg-light rounded border'>
+									<p className='mb-0'>Aún no hay planes configurados.</p>
+								</div>
+							)}
 						</div>
 					)}
 				</div>
 			</div>
+
+			<ModalPlans
+				isOpen={isModalOpen}
+				onClose={() => {
+					setIsModalOpen(false);
+					resetForm();
+				}}
+				planData={editingId ? newPlan : null}
+				onSave={handleSubmit}
+				tipo='Plan'
+			/>
 		</div>
 	);
 };
