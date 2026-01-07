@@ -21,7 +21,7 @@
 
 /* Click hint */
 .modern-slider-card::after {
-	content: "👆 Click para ver más";
+	content: "Ver";
 	position: absolute;
 	bottom: 15px;
 	right: 15px;
@@ -102,7 +102,8 @@
 	font-size: 0.95rem;
 	line-height: 1.5;
 	margin: 0;
-	opacity: 0.85; /* Clearly visible on mobile by default due to gradient */
+	opacity: 0.85;
+	/* Clearly visible on mobile by default due to gradient */
 	transition: all 0.4s ease;
 	display: -webkit-box;
 	-webkit-line-clamp: 3;
@@ -123,9 +124,11 @@
 		height: 350px;
 		border-radius: 18px;
 	}
+
 	.overlay-title {
 		font-size: 1.15rem;
 	}
+
 	.overlay-description {
 		font-size: 0.85rem;
 		opacity: 0.9;

@@ -67,7 +67,7 @@ export const Home = () => {
 					<SliderSection title='Nuestras Promociones' items={promociones} id='promociones' />
 				) : (
 					<div className='text-center p-5'>
-						<p>Cargando promociones o no hay activas...</p>
+						<p>Cargando promociones...</p>
 					</div>
 				)}
 			</div>

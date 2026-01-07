@@ -13,6 +13,7 @@ export const SliderSection = ({ title, items, id }) => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const swiperRef = useRef(null);
 
+	//******************** */
 	const handleCardClick = (item) => {
 		setSelectedPromo(item);
 		setIsModalOpen(true);
@@ -31,6 +32,7 @@ export const SliderSection = ({ title, items, id }) => {
 		}
 	};
 
+	//******************** */
 	return (
 		<section className='py-5 container' id={id}>
 			<h2
@@ -63,7 +65,7 @@ export const SliderSection = ({ title, items, id }) => {
 						slidesPerView: 3,
 					},
 				}}
-				className='modern-swiper px-2 py-5'>
+				className='modern-swiper px-2 py-1'>
 				{items.map((item, index) => (
 					<SwiperSlide key={index}>
 						<div className='modern-slider-card' onClick={() => handleCardClick(item)} style={{ cursor: "pointer" }}>
