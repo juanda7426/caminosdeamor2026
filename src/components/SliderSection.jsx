@@ -1,13 +1,36 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import logo from "../img/logoLov.jpg";
+import PromoDetailModal from "./modales/PromoDetailModal";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "../css/sliderSection.css";
 
 export const SliderSection = ({ title, items, id }) => {
+	const [selectedPromo, setSelectedPromo] = useState(null);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const swiperRef = useRef(null);
+
+	const handleCardClick = (item) => {
+		setSelectedPromo(item);
+		setIsModalOpen(true);
+		// Pause the slider
+		if (swiperRef.current && swiperRef.current.autoplay) {
+			swiperRef.current.autoplay.stop();
+		}
+	};
+
+	const handleCloseModal = () => {
+		setIsModalOpen(false);
+		setSelectedPromo(null);
+		// Resume the slider
+		if (swiperRef.current && swiperRef.current.autoplay) {
+			swiperRef.current.autoplay.start();
+		}
+	};
+
 	return (
 		<section className='py-5 container' id={id}>
 			<h2
@@ -25,6 +48,7 @@ export const SliderSection = ({ title, items, id }) => {
 					}}></span>
 			</h2>
 			<Swiper
+				onSwiper={(swiper) => (swiperRef.current = swiper)}
 				modules={[Navigation, Pagination, Autoplay]}
 				spaceBetween={30}
 				slidesPerView={1}
@@ -42,7 +66,7 @@ export const SliderSection = ({ title, items, id }) => {
 				className='modern-swiper px-2 py-5'>
 				{items.map((item, index) => (
 					<SwiperSlide key={index}>
-						<div className='modern-slider-card'>
+						<div className='modern-slider-card' onClick={() => handleCardClick(item)} style={{ cursor: "pointer" }}>
 							<div className='card-image-wrapper'>
 								<img src={item.image ? item.image : logo} className='card-img-modern' alt={item.title} />
 								<div className='card-overlay-gradient'>
@@ -56,6 +80,9 @@ export const SliderSection = ({ title, items, id }) => {
 					</SwiperSlide>
 				))}
 			</Swiper>
+
+			{/* Modal de detalle */}
+			<PromoDetailModal isOpen={isModalOpen} onClose={handleCloseModal} promo={selectedPromo} />
 		</section>
 	);
 };

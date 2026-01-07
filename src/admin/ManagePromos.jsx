@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { db, storage } from "../firebase-config";
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import ModalPromos from "../components/modales/ModalPromos";
+import logo from "../img/logoLov.jpg";
 
 const ManagePromos = () => {
 	const [promos, setPromos] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [uploading, setUploading] = useState(false);
 	const [editingId, setEditingId] = useState(null);
+	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [newPromo, setNewPromo] = useState({
 		title: "",
 		description: "",
@@ -18,17 +21,98 @@ const ManagePromos = () => {
 	const [previewUrl, setPreviewUrl] = useState("");
 
 	const promosCollectionRef = collection(db, "promotions");
+	const CACHE_KEY = "promos_cache";
+
+	//************************ */
+	// Cache Helper Functions
+	const savePromosToCache = (promosData) => {
+		try {
+			const cacheData = {
+				data: promosData,
+				timestamp: new Date().getTime(),
+			};
+			localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+		} catch (error) {
+			console.error("Error saving to cache:", error);
+		}
+	};
+
+	const getPromosFromCache = () => {
+		try {
+			const cached = localStorage.getItem(CACHE_KEY);
+			if (cached) {
+				const { data } = JSON.parse(cached);
+				return data;
+			}
+		} catch (error) {
+			console.error("Error reading from cache:", error);
+		}
+		return null;
+	};
 
 	// Fetch Promos
-	const getPromos = async () => {
+	const getPromos = async (forceRefresh = false) => {
 		setLoading(true);
 		try {
+			// Try to load from cache first if not forcing refresh
+			if (!forceRefresh) {
+				const cachedPromos = getPromosFromCache();
+				if (cachedPromos) {
+					setPromos(cachedPromos);
+					setLoading(false);
+					// Optionally fetch in background to update cache
+					fetchAndUpdateCache();
+					return;
+				}
+			}
+
+			// Fetch from Firebase
 			const data = await getDocs(promosCollectionRef);
-			setPromos(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+			const promosData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			setPromos(promosData);
+			savePromosToCache(promosData);
 		} catch (error) {
 			console.error("Error al obtener promociones:", error);
+			// Try to use cache as fallback
+			const cachedPromos = getPromosFromCache();
+			if (cachedPromos) {
+				setPromos(cachedPromos);
+			}
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	// Background fetch to update cache
+	const fetchAndUpdateCache = async () => {
+		try {
+			const data = await getDocs(promosCollectionRef);
+			const promosData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			savePromosToCache(promosData);
+			// Update state only if data changed
+			setPromos(promosData);
+		} catch (error) {
+			console.error("Error updating cache:", error);
+		}
+	};
+
+	// Helper function to delete image from Firebase Storage
+	const deleteImageFromStorage = async (imageUrl) => {
+		if (!imageUrl) return;
+		try {
+			// Extract the path from the Firebase Storage URL
+			// URL format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{path}?alt=media&token={token}
+			const decodedUrl = decodeURIComponent(imageUrl);
+			const pathMatch = decodedUrl.match(/\/o\/(.+?)\?/);
+			if (pathMatch && pathMatch[1]) {
+				const imagePath = pathMatch[1];
+				const imageRef = ref(storage, imagePath);
+				await deleteObject(imageRef);
+				console.log("Image deleted from storage:", imagePath);
+			}
+		} catch (error) {
+			console.error("Error deleting image from storage:", error);
+			// Don't throw error, just log it - we don't want to block the operation
 		}
 	};
 
@@ -46,30 +130,43 @@ const ManagePromos = () => {
 	};
 
 	// Create or Update Promo
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		if (!newPromo.title || !newPromo.description) return alert("Llena todos los campos");
+	const handleSubmit = async (formData, imageFileFromModal) => {
+		if (!formData.title || !formData.description) return alert("Llena todos los campos");
 
 		setUploading(true);
 		try {
-			let imageUrl = newPromo.image;
+			let imageUrl = formData.image;
+			let oldImageUrl = null;
+
+			// If editing and uploading a new image, save the old URL for deletion
+			if (editingId && imageFileFromModal && formData.image) {
+				oldImageUrl = formData.image;
+			}
 
 			// Upload image if a new one is selected
-			if (imageFile) {
-				const storageRef = ref(storage, `promotions/${Date.now()}_${imageFile.name}`);
-				await uploadBytes(storageRef, imageFile);
+			if (imageFileFromModal) {
+				const storageRef = ref(storage, `promotions/${Date.now()}_${imageFileFromModal.name}`);
+				await uploadBytes(storageRef, imageFileFromModal);
 				imageUrl = await getDownloadURL(storageRef);
 			}
 
 			const promoData = {
-				...newPromo,
+				title: formData.title,
+				description: formData.description,
 				image: imageUrl,
+				isActive: formData.isActive,
 				updatedAt: new Date(),
 			};
 
 			if (editingId) {
 				const promoDoc = doc(db, "promotions", editingId);
 				await updateDoc(promoDoc, promoData);
+
+				// Delete old image from storage if a new one was uploaded
+				if (oldImageUrl && imageFileFromModal) {
+					await deleteImageFromStorage(oldImageUrl);
+				}
+
 				alert("Promoción actualizada con éxito!");
 			} else {
 				await addDoc(promosCollectionRef, { ...promoData, createdAt: new Date() });
@@ -77,7 +174,8 @@ const ManagePromos = () => {
 			}
 
 			resetForm();
-			getPromos();
+			setIsModalOpen(false);
+			getPromos(true); // Force refresh from Firebase after changes
 		} catch (error) {
 			console.error("Error al guardar:", error);
 			alert("Error al guardar la promoción");
@@ -103,7 +201,7 @@ const ManagePromos = () => {
 			isActive: promo.isActive ?? true,
 		});
 		setPreviewUrl(promo.image);
-		window.scrollTo({ top: 0, behavior: "smooth" });
+		setIsModalOpen(true);
 	};
 
 	// Toggle Status
@@ -111,7 +209,7 @@ const ManagePromos = () => {
 		try {
 			const promoDoc = doc(db, "promotions", id);
 			await updateDoc(promoDoc, { isActive: !currentStatus });
-			getPromos();
+			getPromos(true); // Force refresh from Firebase after changes
 		} catch (error) {
 			console.error("Error toggling status:", error);
 		}
@@ -121,75 +219,44 @@ const ManagePromos = () => {
 	const deletePromo = async (id) => {
 		if (window.confirm("¿Seguro que quieres eliminar esta promo?")) {
 			try {
+				// Find the promo to get its image URL
+				const promoToDelete = promos.find((p) => p.id === id);
+
+				// Delete the document from Firestore
 				await deleteDoc(doc(db, "promotions", id));
-				getPromos();
+
+				// Delete the image from storage if it exists
+				if (promoToDelete && promoToDelete.image) {
+					await deleteImageFromStorage(promoToDelete.image);
+				}
+
+				getPromos(true); // Force refresh from Firebase after changes
 			} catch (error) {
 				console.error("Error al eliminar:", error);
 			}
 		}
 	};
 
+	//************************ */
 	return (
 		<div style={{ padding: "20px" }}>
-			<h1 className='fw-bold main-color mb-4'>Panel de Promociones</h1>
+			<div className='d-flex justify-content-between align-items-center mb-4'>
+				<h1 className='fw-bold main-color mb-0'>Panel de Promociones</h1>
+				<button
+					className='btn btn-primary'
+					style={{ backgroundColor: "#0087b7", border: "none" }}
+					onClick={() => {
+						resetForm();
+						setIsModalOpen(true);
+					}}>
+					<i className='fas fa-plus me-2'></i>
+					Nueva Promoción
+				</button>
+			</div>
 
 			<div className='row g-4'>
-				{/* Formulario Section */}
-				<div className='col-lg-5'>
-					<div className='card shadow-sm border-0 p-4 sticky-top' style={{ top: "20px" }}>
-						<h3 className='mb-4'>{editingId ? "Editar Promoción" : "Nueva Promoción"}</h3>
-						<form onSubmit={handleSubmit}>
-							<div className='mb-3'>
-								<label className='form-label fw-bold'>Título</label>
-								<input
-									className='form-control'
-									type='text'
-									placeholder='Ej: Promo San Valentín'
-									value={newPromo.title}
-									onChange={(e) => setNewPromo({ ...newPromo, title: e.target.value })}
-									required
-								/>
-							</div>
-							<div className='mb-3'>
-								<label className='form-label fw-bold'>Descripción</label>
-								<textarea
-									className='form-control'
-									rows='3'
-									placeholder='Detalles de la promoción...'
-									value={newPromo.description}
-									onChange={(e) => setNewPromo({ ...newPromo, description: e.target.value })}
-									required></textarea>
-							</div>
-							<div className='mb-3'>
-								<label className='form-label fw-bold'>Imagen de la Promo</label>
-								<input className='form-control' type='file' accept='image/*' onChange={handleImageChange} />
-								{previewUrl && (
-									<div className='mt-3 text-center border rounded p-2 bg-light'>
-										<p className='small text-muted mb-2'>Previsualización:</p>
-										<img src={previewUrl} alt='Preview' style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px" }} />
-									</div>
-								)}
-							</div>
-							<div className='d-flex gap-2 mt-4'>
-								<button
-									type='submit'
-									className='btn btn-primary flex-grow-1'
-									disabled={uploading}
-									style={{ backgroundColor: "#0087b7", border: "none" }}>
-									{uploading ? "Guardando..." : editingId ? "Actualizar" : "Publicar"}
-								</button>
-								{editingId && (
-									<button type='button' className='btn btn-outline-secondary' onClick={resetForm}>
-										Cancelar
-									</button>
-								)}
-							</div>
-						</form>
-					</div>
-				</div>
-
 				{/* List Section */}
-				<div className='col-lg-7'>
+				<div className='col-12'>
 					<h3 className='mb-4'>Promociones Existentes ({promos.length})</h3>
 					{loading ? (
 						<div className='text-center py-5'>
@@ -198,11 +265,16 @@ const ManagePromos = () => {
 					) : (
 						<div className='row g-3'>
 							{promos.map((promo) => (
-								<div key={promo.id} className='col-12'>
+								<div key={promo.id} className='col-md-6'>
 									<div className='card shadow-sm border-0 overflow-hidden h-100 position-relative'>
 										<div className='row g-0'>
 											<div className='col-md-4' style={{ height: "150px" }}>
-												<img src={promo.image} alt={promo.title} className='w-100 h-100' style={{ objectFit: "cover" }} />
+												<img
+													src={promo.image ? promo.image : "../img/logoLov.jpg"}
+													alt={promo.title}
+													className='w-100 h-100'
+													style={{ objectFit: "cover" }}
+												/>
 											</div>
 											<div className='col-md-8 px-3 py-2 d-flex flex-column justify-content-between'>
 												<div>
@@ -281,6 +353,17 @@ const ManagePromos = () => {
 					)}
 				</div>
 			</div>
+
+			{/* Modal */}
+			<ModalPromos
+				isOpen={isModalOpen}
+				onClose={() => {
+					setIsModalOpen(false);
+					resetForm();
+				}}
+				promoData={editingId ? newPromo : null}
+				onSave={handleSubmit}
+			/>
 		</div>
 	);
 };
