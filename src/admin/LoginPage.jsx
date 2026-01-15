@@ -62,8 +62,8 @@ const LoginPage = () => {
             />
           </div>
 
-          <button type="submit" className="btn-login">
-            INGRESAR
+          <button type="submit" title="Iniciar Sesión" className="btn-login">
+            LogIn
           </button>
         </form>
       </div>

@@ -1,6 +1,7 @@
 import { Navigate, Outlet, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FaPowerOff } from "react-icons/fa";
+import logo from "../img/logoLov.jpg";
 import "../css/adminLayout.css";
 
 const AdminLayout = () => {
@@ -13,8 +14,20 @@ const AdminLayout = () => {
   return (
     <div className="admin-layout">
       <aside className="admin-aside d-flex flex-column">
-        <h4 className="admin-title">Panel Admin</h4>
-        <hr />
+        <h4 className="text-center mb-0">Panel </h4>
+        <div className="row justify-content-center">
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              width: "4.8rem",
+              height: "4.8rem",
+              borderRadius: "80px",
+            }}
+          />
+        </div>
+        <h4 className="text-center mt-0"> Admin</h4>
+        <hr className="my-0" />
         <nav className="mt-4">
           <ul>
             <li>
@@ -79,18 +92,19 @@ const AdminLayout = () => {
             </li>
           </ul>
         </nav>
-        <div className="container-fluid mt-auto  mb-2">
+        <div className="row mt-auto mb-3">
           <button
             onClick={logout}
             title="Cerrar Sesión"
             style={{
+              marginLeft: "auto",
+              marginRight: "auto",
+              maxWidth: "6rem",
               background: "#02C4FF",
               color: "black",
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
             }}
           >
             <span
@@ -100,7 +114,7 @@ const AdminLayout = () => {
                 fontWeight: "bold",
               }}
             >
-              Cerrar Sesión
+              LogOut
             </span>
             <FaPowerOff size={12} />
           </button>
