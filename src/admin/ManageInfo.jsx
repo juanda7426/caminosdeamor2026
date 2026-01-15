@@ -1,112 +1,219 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebase-config";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const ManageInfo = () => {
-	const [loading, setLoading] = useState(true);
-	const [saving, setSaving] = useState(false);
-	const [info, setInfo] = useState({
-		phone: "",
-		whatsapp: "",
-		address: "",
-		email: "",
-		facebook: "",
-		instagram: "",
-		hours: "",
-	});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [info, setInfo] = useState({
+    phone: "",
+    phone2: "",
+    whatsapp: "",
+    address: "",
+    email: "",
+    facebook: "",
+    instagram: "",
+    tiktok: "",
+    website: "",
+    hours: "",
+  });
 
-	useEffect(() => {
-		const fetchInfo = async () => {
-			try {
-				const docRef = doc(db, "site_config", "global");
-				const docSnap = await getDoc(docRef);
-				if (docSnap.exists()) {
-					setInfo(docSnap.data());
-				}
-			} catch (error) {
-				console.error("Error fetching info:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
+  //****************** */
+  useEffect(() => {
+    const fetchInfo = async () => {
+      try {
+        const docRef = doc(db, "site_config", "global");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setInfo(docSnap.data());
+        }
+      } catch (error) {
+        console.error("Error fetching info:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-		fetchInfo();
-	}, []);
+    fetchInfo();
+  }, []);
 
-	const handleChange = (e) => {
-		setInfo({
-			...info,
-			[e.target.name]: e.target.value,
-		});
-	};
+  const handleChange = (e) => {
+    setInfo({
+      ...info,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		setSaving(true);
-		try {
-			// Save to Firestore 'site_config' collection, document 'global'
-			await setDoc(doc(db, "site_config", "global"), info);
-			alert("Información actualizada correctamente");
-		} catch (error) {
-			console.error("Error saving info:", error);
-			alert("Error al guardar");
-		} finally {
-			setSaving(false);
-		}
-	};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      // Save to Firestore 'site_config' collection, document 'global'
+      await setDoc(doc(db, "site_config", "global"), info);
+      alert("Información actualizada correctamente");
+    } catch (error) {
+      console.error("Error saving info:", error);
+      alert("Error al guardar");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-	if (loading) return <div>Cargando información...</div>;
+  if (loading) return <div>Cargando información...</div>;
 
-	return (
-		<div style={{ maxWidth: "600px", background: "white", padding: "20px", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-			<h2>Información de la Empresa</h2>
-			<p>Estos datos se reflejarán en el pie de página y header.</p>
+  //****************** */
+  return (
+    <>
+      <div
+        style={{
+          maxWidth: "800px",
+          backgroundColor: "#f8f8f8ff",
+          padding: "10px",
+          borderRadius: "8px",
+          margin: "10px auto",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          textAlign: "center",
+        }}
+      >
+        <h3>Información de la Empresa</h3>
+        <p>Estos datos se reflejarán en el footer y header.</p>
+      </div>
 
-			<form onSubmit={handleSubmit}>
-				<div className='form-group'>
-					<label>Teléfono (Mostrar)</label>
-					<input name='phone' value={info.phone || ""} onChange={handleChange} type='text' placeholder='+57 300 123 4567' />
-				</div>
-				<div className='form-group'>
-					<label>Horarios de Atención</label>
-					<textarea
-						name='hours'
-						value={info.hours || ""}
-						onChange={handleChange}
-						placeholder='Ej: Lunes a Viernes: 8am - 6pm'
-						rows='3'
-						style={{ width: "100%", padding: "8px" }}
-					/>
-				</div>
-				<div className='form-group'>
-					<label>Whatsapp (Link)</label>
-					<input name='whatsapp' value={info.whatsapp || ""} onChange={handleChange} type='text' placeholder='https://wa.me/...' />
-				</div>
-				<div className='form-group'>
-					<label>Dirección</label>
-					<input name='address' value={info.address || ""} onChange={handleChange} type='text' />
-				</div>
-				<div className='form-group'>
-					<label>Correo Electrónico</label>
-					<input name='email' value={info.email || ""} onChange={handleChange} type='email' />
-				</div>
+      {/* Formulario de Información */}
+      <div
+        style={{
+          maxWidth: "1400px",
+          background: "white",
+          padding: "20px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          margin: "30px auto",
+        }}
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="row">
+            <div className="col-sm-6 form-group mb-2">
+              <label className="fw-bold">Teléfono (Principal)</label>
+              <input
+                className="form-control"
+                name="phone"
+                value={info.phone || ""}
+                onChange={handleChange}
+                type="phone"
+                placeholder="+57 300 ..."
+              />
+            </div>
+            <div className="col-sm-6 form-group mb-2">
+              <label className="fw-bold">Teléfono (Secundario)</label>
+              <input
+                className="form-control"
+                name="phone2"
+                value={info.phone2 || ""}
+                onChange={handleChange}
+                type="phone"
+                placeholder="+57 310 ..."
+              />
+            </div>
+            <div className="col-sm-6 form-group mb-2">
+              <label className="fw-bold">Sitio Web (URL)</label>
+              <input
+                className="form-control"
+                name="website"
+                value={info.website || ""}
+                onChange={handleChange}
+                type="text"
+                placeholder="www.caminosdeamor.com"
+              />
+            </div>
 
-				<h3>Redes Sociales</h3>
-				<div className='form-group'>
-					<label>Facebook URL</label>
-					<input name='facebook' value={info.facebook || ""} onChange={handleChange} type='text' />
-				</div>
-				<div className='form-group'>
-					<label>Instagram URL</label>
-					<input name='instagram' value={info.instagram || ""} onChange={handleChange} type='text' />
-				</div>
+            <div className="col-sm-6 form-group mb-2">
+              <label className="fw-bold">Whatsapp (Link)</label>
+              <input
+                className="form-control"
+                name="whatsapp"
+                value={info.whatsapp || ""}
+                onChange={handleChange}
+                type="text"
+                placeholder="https://wa.me/..."
+              />
+            </div>
+            <div className="col-sm-6 form-group mb-2">
+              <label className="fw-bold">Dirección</label>
+              <input
+                className="form-control"
+                name="address"
+                value={info.address || ""}
+                onChange={handleChange}
+                type="text"
+              />
+            </div>
+            <div className="col-sm-6 form-group mb-2">
+              <label className="fw-bold">Correo Electrónico</label>
+              <input
+                className="form-control"
+                name="email"
+                value={info.email || ""}
+                onChange={handleChange}
+                type="email"
+              />
+            </div>
+            <div className="col-sm-12 form-group mb-2">
+              <label className="fw-bold">Horarios de Atención</label>
+              <textarea
+                className="form-control"
+                name="hours"
+                value={info.hours || ""}
+                onChange={handleChange}
+                placeholder="Ej: Lunes a Viernes: 8am - 6pm"
+                rows="1"
+              />
+            </div>
+            <div className="col-sm-12 form-group mb-2">
+              <label className="fw-bold">Facebook URL</label>
+              <input
+                className="form-control"
+                name="facebook"
+                value={info.facebook || ""}
+                onChange={handleChange}
+                type="text"
+              />
+            </div>
+            <div className="col-sm-12 form-group mb-2">
+              <label className="fw-bold">Instagram URL</label>
+              <input
+                className="form-control"
+                name="instagram"
+                value={info.instagram || ""}
+                onChange={handleChange}
+                type="text"
+              />
+            </div>
+            <div className="col-sm-12 form-group mb-2">
+              <label className="fw-bold">TikTok URL</label>
+              <input
+                className="form-control"
+                name="tiktok"
+                value={info.tiktok || ""}
+                onChange={handleChange}
+                type="text"
+              />
+            </div>
+          </div>
 
-				<button type='submit' disabled={saving} className='btn-login' style={{ marginTop: "20px" }}>
-					{saving ? "Guardando..." : "Guardar Cambios"}
-				</button>
-			</form>
-		</div>
-	);
+          <div className="row mt-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-login"
+              style={{ marginTop: "20px", maxWidth: "200px", margin: "auto" }}
+            >
+              {saving ? "Guardando..." : "Guardar Cambios"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
+  );
 };
 
 export default ManageInfo;

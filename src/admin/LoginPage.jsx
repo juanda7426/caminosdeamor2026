@@ -29,7 +29,7 @@ const LoginPage = () => {
       <div className="login-card">
         <div className="login-header">
           <img src="../img/logoLov.jpg" alt="Logo" className="login-logo" />
-          <h2>Administración Web</h2>
+          <h2>Administración</h2>
           <h4>Caminos de Amor</h4>
         </div>
 
