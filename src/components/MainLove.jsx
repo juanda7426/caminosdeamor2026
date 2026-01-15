@@ -1,9 +1,7 @@
-import React from "react";
 import "../css/main.css";
-import { whatsappLink } from './../config/arreglos';
+import { whatsappLink } from "./../config/arreglos";
 
 export const MainLove = ({ children }) => {
-
   return (
     <div className=" d-flex justify-content-center align-items-start">
       {children}

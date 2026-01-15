@@ -1,20 +1,25 @@
-import React from "react";
 import { useCompany } from "../context/CompanyContext";
+import {
+  Number,
+  instagramLink,
+  facebookLink,
+  tiktokLink,
+  websiteLink,
+} from "../config/arreglos";
 
 export const FooterLove = () => {
   const { companyInfo } = useCompany();
 
-  // Fallbacks if context is loading or empty (optional, but good for stability)
-  const {
-    phone = "323 403 59 61",
-    phone2 = "310 539 06 93",
-    email = "caminosdeamorsas@gmail.com",
-    address = "",
-    facebook = "https://www.facebook.com/people/Funeraria-caminos-de-amor/100066903139742/",
-    instagram = "https://www.instagram.com/caminosde.amor?utm_source=qr&igsh=OGx0Zm91dTF3enA1",
-    tiktok = "https://vm.tiktok.com/ZMrrg4Vhu/",
-    website = "www.caminosdeamor.com",
-  } = companyInfo || {};
+  // Use values from context, or fall back to defaults from arreglos.js if missing/empty
+  // Note: We use || because backend might return empty strings "" which are falsy
+  const phone = companyInfo?.phone || Number;
+  const phone2 = companyInfo?.phone2 || "310 539 06 93";
+  const email = companyInfo?.email || "caminosdeamorsas@gmail.com";
+  const address = companyInfo?.address || "";
+  const facebook = companyInfo?.facebook || facebookLink;
+  const instagram = companyInfo?.instagram || instagramLink;
+  const tiktok = companyInfo?.tiktok || tiktokLink;
+  const website = companyInfo?.website || websiteLink;
 
   return (
     <>
@@ -125,7 +130,17 @@ export const FooterLove = () => {
             <p className="my-2">Copyright 2024 &copy; Caminos de Amor S.A.S</p>
           </div>
           <div className="col-md-4 text-center text-md-center mb-md-0">
-            <p className="my-2">Desarrollado por JUANDA-CODE!</p>
+            <p className="my-2 text-sm text-gray-500">
+              Desarrollado por{" "}
+              <a
+                href="https://juanda7426.github.io/Juanda-Code/"
+                className="hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Juanda Code
+              </a>
+            </p>
           </div>
         </div>
       </div>

@@ -15,10 +15,13 @@ import {
   deleteObject,
 } from "firebase/storage";
 import ModalPartners from "../components/modales/ModalPartners";
+import Loader from "../components/Loader";
+import Swal from "sweetalert2";
 
 const ManagePartners = () => {
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false); // Helper state for write operations
   const [editingId, setEditingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPartner, setNewPartner] = useState({
@@ -75,8 +78,15 @@ const ManagePartners = () => {
   // Create or Update Partner
   const handleSubmit = async (formData, imageFileFromModal) => {
     if (!formData.name || !formData.benefit)
-      return alert("Llena al menos Nombre y Beneficio");
+      return Swal.fire({
+        title: "Atención",
+        text: "Llena al menos Nombre y Beneficio",
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "Aceptar",
+      });
 
+    setProcessing(true);
     try {
       let imageUrl = formData.logo;
       let oldImageUrl = null;
@@ -118,10 +128,22 @@ const ManagePartners = () => {
           await deleteImageFromStorage(oldImageUrl);
         }
 
-        alert("Convenio actualizado con éxito!");
+        Swal.fire({
+          title: "¡Actualizado!",
+          text: "Convenio actualizado con éxito",
+          icon: "success",
+          confirmButtonColor: "#3085d6",
+          confirmButtonText: "Aceptar",
+        });
       } else {
         await addDoc(partnersCollectionRef, partnerData);
-        alert("Convenio agregado!");
+        Swal.fire({
+          title: "¡Agregado!",
+          text: "Convenio agregado con éxito",
+          icon: "success",
+          confirmButtonColor: "#3085d6",
+          confirmButtonText: "Aceptar",
+        });
       }
 
       resetForm();
@@ -129,27 +151,47 @@ const ManagePartners = () => {
       getPartners();
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert("Error al guardar el convenio");
+      Swal.fire({
+        title: "Error",
+        text: "Error al guardar el convenio",
+        icon: "error",
+        confirmButtonColor: "#d33",
+        confirmButtonText: "Aceptar",
+      });
+    } finally {
+      setProcessing(false);
     }
   };
 
   // Toggle Status
   const toggleStatus = async (id, currentStatus) => {
+    setProcessing(true);
     try {
       const partnerDoc = doc(db, "partners", id);
       await updateDoc(partnerDoc, { isActive: !currentStatus });
       getPartners();
     } catch (error) {
       console.error("Error toggling status:", error);
+    } finally {
+      setProcessing(false);
     }
   };
 
   // Delete Partner
   const deletePartner = async (id) => {
-    const confirm = window.confirm(
-      "¿Seguro que quieres eliminar este convenio?"
-    );
-    if (confirm) {
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "No podrás revertir esta acción",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (result.isConfirmed) {
+      setProcessing(true);
       try {
         const partnerToDelete = partners.find((p) => p.id === id);
         await deleteDoc(doc(db, "partners", id));
@@ -159,8 +201,12 @@ const ManagePartners = () => {
         }
 
         getPartners();
+        Swal.fire("Eliminado!", "El convenio ha sido eliminado.", "success");
       } catch (error) {
         console.error("Error al eliminar:", error);
+        Swal.fire("Error!", "Hubo un problema al eliminar.", "error");
+      } finally {
+        setProcessing(false);
       }
     }
   };
@@ -202,6 +248,8 @@ const ManagePartners = () => {
   //*************** */
   return (
     <div style={{ padding: "20px" }}>
+      {processing && <Loader message="Procesando cambios..." />}
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="fw-bold main-color mb-0">Gestión de Convenios</h1>
         <button

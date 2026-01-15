@@ -14,19 +14,19 @@ const AdminLayout = () => {
   return (
     <div className="admin-layout">
       <aside className="admin-aside d-flex flex-column">
-        <h4 className="text-center mb-0">Panel </h4>
+        <h4 className="text-center mb-0">Panel</h4>
         <div className="row justify-content-center">
           <img
             src={logo}
             alt="Logo"
             style={{
-              width: "4.8rem",
-              height: "4.8rem",
-              borderRadius: "80px",
+              width: "4.1rem",
+              height: "3.8rem",
+              borderRadius: "50px",
             }}
           />
         </div>
-        <h4 className="text-center mt-0"> Admin</h4>
+        <h4 className="text-center mt-0">Admin</h4>
         <hr className="my-0" />
         <nav className="mt-4">
           <ul>

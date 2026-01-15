@@ -1,7 +1,7 @@
 import { FloatingWhatsApp } from "react-floating-whatsapp";
 import { Number } from "../config/arreglos";
-import "../css/contact.css";
 import { useCompany } from "../context/CompanyContext";
+import "../css/contact.css";
 
 export const Contact = () => {
   const logo = "../../img/logoS.png";

@@ -72,12 +72,13 @@ export const Beneficios = () => {
       </div>
       <div className="container-fluid px-5">
         {loading ? (
-          <div className="text-center">
-            <p>Cargando beneficios...</p>
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-2">Cargando beneficios...</p>
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center">
-            <p>Próximamente más beneficios.</p>
+          <div className="text-center py-5">
+            <p className="text-muted fs-5">No hay beneficios disponibles</p>
           </div>
         ) : (
           <div className="row g-4 justify-content-center">

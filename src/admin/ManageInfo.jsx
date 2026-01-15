@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase-config";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import Loader from "../components/Loader";
+import Swal from "sweetalert2";
 
 const ManageInfo = () => {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [info, setInfo] = useState({
     phone: "",
     phone2: "",
@@ -46,16 +48,28 @@ const ManageInfo = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
+    setProcessing(true);
     try {
       // Save to Firestore 'site_config' collection, document 'global'
       await setDoc(doc(db, "site_config", "global"), info);
-      alert("Información actualizada correctamente");
+      Swal.fire({
+        title: "¡Éxito!",
+        text: "Información actualizada correctamente",
+        icon: "success",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "Aceptar",
+      });
     } catch (error) {
       console.error("Error saving info:", error);
-      alert("Error al guardar");
+      Swal.fire({
+        title: "Error",
+        text: "Hubo un problema al guardar la información",
+        icon: "error",
+        confirmButtonColor: "#d33",
+        confirmButtonText: "Aceptar",
+      });
     } finally {
-      setSaving(false);
+      setProcessing(false);
     }
   };
 
@@ -64,6 +78,8 @@ const ManageInfo = () => {
   //****************** */
   return (
     <>
+      {processing && <Loader message="Guardando información..." />}
+
       <div
         style={{
           maxWidth: "800px",
@@ -203,11 +219,11 @@ const ManageInfo = () => {
           <div className="row mt-3">
             <button
               type="submit"
-              disabled={saving}
+              disabled={processing}
               className="btn-login"
               style={{ marginTop: "20px", maxWidth: "200px", margin: "auto" }}
             >
-              {saving ? "Guardando..." : "Guardar Cambios"}
+              {processing ? "Guardando..." : "Guardar Cambios"}
             </button>
           </div>
         </form>

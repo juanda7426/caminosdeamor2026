@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebase-config";
-import {
-  collection,
-  getCountFromServer,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import {
   FaGlobe,
@@ -20,10 +15,10 @@ import {
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const [stats, setStats] = useState({
-    partnersCount: 0,
-    plansCount: 0,
-    promosCount: 0,
-    novedadesCount: 0,
+    partners: { total: 0, active: 0, inactive: 0 },
+    plans: { total: 0, active: 0, inactive: 0 },
+    promos: { total: 0, active: 0, inactive: 0 },
+    novedades: { total: 0, active: 0, inactive: 0 },
     infoConfigured: false,
   });
   const [loading, setLoading] = useState(true);
@@ -31,27 +26,72 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        // Fetch Partners
         const partnersColl = collection(db, "partners");
-        const partnersSnapshot = await getCountFromServer(partnersColl);
+        const partnersSnapshot = await getDocs(partnersColl);
+        const partnersTotal = partnersSnapshot.size;
+        const partnersActive = partnersSnapshot.docs.filter(
+          (doc) => doc.data().isActive !== false
+        ).length;
 
+        // Fetch Plans
         const plansColl = collection(db, "plans");
-        const plansSnapshot = await getCountFromServer(plansColl);
+        const plansSnapshot = await getDocs(plansColl);
+        const plansTotal = plansSnapshot.size;
+        const plansActive = plansSnapshot.docs.filter(
+          (doc) => doc.data().isActive !== false
+        ).length;
 
+        // Fetch Promos
         const promosColl = collection(db, "promotions");
-        const promosSnapshot = await getCountFromServer(promosColl);
+        const promosSnapshot = await getDocs(promosColl);
+        const promosTotal = promosSnapshot.size;
+        const promosActive = promosSnapshot.docs.filter(
+          (doc) => doc.data().isActive !== false
+        ).length;
 
+        // Fetch Config
         const configRef = doc(db, "site_config", "global");
         const configSnap = await getDoc(configRef);
 
+        let isConfigValid = false;
+        if (configSnap.exists()) {
+          const data = configSnap.data();
+          const hasPhone = data.phone && data.phone.trim() !== "";
+          const hasEmail = data.email && data.email.trim() !== "";
+          isConfigValid = hasPhone && hasEmail;
+        }
+
+        // Fetch Novedades
         const novedadesColl = collection(db, "novedades");
-        const novedadesSnapshot = await getCountFromServer(novedadesColl);
+        const novedadesSnapshot = await getDocs(novedadesColl);
+        const novedadesTotal = novedadesSnapshot.size;
+        const novedadesActive = novedadesSnapshot.docs.filter(
+          (doc) => doc.data().isActive !== false
+        ).length;
 
         setStats({
-          partnersCount: partnersSnapshot.data().count,
-          plansCount: plansSnapshot.data().count,
-          promosCount: promosSnapshot.data().count,
-          novedadesCount: novedadesSnapshot.data().count,
-          infoConfigured: configSnap.exists(),
+          partners: {
+            total: partnersTotal,
+            active: partnersActive,
+            inactive: partnersTotal - partnersActive,
+          },
+          plans: {
+            total: plansTotal,
+            active: plansActive,
+            inactive: plansTotal - plansActive,
+          },
+          promos: {
+            total: promosTotal,
+            active: promosActive,
+            inactive: promosTotal - promosActive,
+          },
+          novedades: {
+            total: novedadesTotal,
+            active: novedadesActive,
+            inactive: novedadesTotal - novedadesActive,
+          },
+          infoConfigured: isConfigValid,
         });
       } catch (error) {
         console.error("Error loading stats:", error);
@@ -66,18 +106,19 @@ const Dashboard = () => {
   const cardsData = [
     {
       title: "Información del Sitio",
+      type: "config",
       count: stats.infoConfigured ? "Configurada" : "Pendiente",
       icon: <FaGlobe size={28} />,
       link: "/admin/info",
       linkText: "Editar Información",
       color: "#0087b7", // Brand Blue
-      isStatus: true, // Special handling for checkmark/x if needed, simplified here
+      isStatus: true,
       statusBool: stats.infoConfigured,
     },
     {
       title: "Beneficios (Aliados)",
-      count: stats.partnersCount,
-      label: "Activos",
+      type: "stats",
+      data: stats.partners,
       icon: <FaHandshake size={32} />,
       link: "/admin/convenios",
       linkText: "Gestionar Beneficios",
@@ -85,8 +126,8 @@ const Dashboard = () => {
     },
     {
       title: "Planes Exequiales",
-      count: stats.plansCount,
-      label: "Disponibles",
+      type: "stats",
+      data: stats.plans,
       icon: <FaLayerGroup size={28} />,
       link: "/admin/planes",
       linkText: "Gestionar Planes",
@@ -94,8 +135,8 @@ const Dashboard = () => {
     },
     {
       title: "Promociones",
-      count: stats.promosCount,
-      label: "Activas",
+      type: "stats",
+      data: stats.promos,
       icon: <FaTags size={28} />,
       link: "/admin/promos",
       linkText: "Gestionar Promos",
@@ -103,8 +144,8 @@ const Dashboard = () => {
     },
     {
       title: "Novedades",
-      count: stats.novedadesCount,
-      label: "Publicadas",
+      type: "stats",
+      data: stats.novedades,
       icon: <FaNewspaper size={28} />,
       link: "/admin/novedades",
       linkText: "Gestionar Novedades",
@@ -191,21 +232,37 @@ const Dashboard = () => {
                   {card.title}
                 </h5>
 
-                <h2 className="display-5 fw-bold text-dark mb-1">
-                  {loading ? (
+                {loading ? (
+                  <div className="py-2">
                     <div
                       className="spinner-border spinner-border-sm text-secondary"
                       role="status"
                     ></div>
-                  ) : (
-                    card.count
-                  )}
-                </h2>
-                {card.label && (
-                  <p className="text-muted small mb-4">{card.label}</p>
+                  </div>
+                ) : card.type === "config" ? (
+                  <h2 className="display-6 fw-bold text-dark mb-1">
+                    {card.count}
+                  </h2>
+                ) : (
+                  <div>
+                    <h2 className="display-4 fw-bold text-dark mb-0">
+                      {card.data.total}
+                    </h2>
+                    <div className="d-flex gap-3 text-muted small mt-2">
+                      <span className="text-success fw-bold">
+                        <i className="fas fa-check-circle me-1"></i>
+                        {card.data.active} Activos
+                      </span>
+                      <span className="text-secondary">|</span>
+                      <span className="text-danger fw-bold">
+                        <i className="fas fa-times-circle me-1"></i>
+                        {card.data.inactive} Inactivos
+                      </span>
+                    </div>
+                  </div>
                 )}
 
-                <div className="mt-auto pt-3 border-top">
+                <div className="mt-auto pt-3 border-top mt-3">
                   <Link
                     to={card.link}
                     className="text-decoration-none fw-bold d-flex align-items-center"
