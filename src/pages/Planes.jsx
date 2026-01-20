@@ -4,12 +4,13 @@ import { FloatingWhatsApp } from "react-floating-whatsapp";
 import { db } from "../firebase-config";
 import { collection, getDocs } from "firebase/firestore";
 import logoFallback from "../img/logoLov.jpg";
+import { planes } from "../config/arreglos";
 import "../css/planes.css";
 
 export const Planes = () => {
   const logo = "../../img/logoS.png";
   const [activePlan, setActivePlan] = useState(null);
-  const [plans, setPlans] = useState([]);
+  const [plans, setPlans] = useState(planes);
   const [loading, setLoading] = useState(true);
 
   //****************** */
@@ -26,7 +27,9 @@ export const Planes = () => {
           }))
           .filter((p) => p.isActive !== false)
           .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
-        setPlans(plansList);
+        if (plansList.length > 0) {
+          setPlans(plansList);
+        }
       } catch (error) {
         console.error("Error fetching plans:", error);
       } finally {

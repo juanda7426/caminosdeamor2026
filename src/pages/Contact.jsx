@@ -1,5 +1,5 @@
 import { FloatingWhatsApp } from "react-floating-whatsapp";
-import { Number } from "../config/arreglos";
+import { dataCompany, Number } from "../config/arreglos";
 import { useCompany } from "../context/CompanyContext";
 import "../css/contact.css";
 
@@ -18,12 +18,7 @@ export const Contact = () => {
     tiktok = "https://vm.tiktok.com/ZMrrg4Vhu/",
   } = companyInfo || {};
 
-  // Clean whatsapp number for FloatingWhatsApp if needed (it usually expects just numbers)
-  // Assuming companyInfo.whatsapp might be a full link or number.
-  // If it's a link (https://wa.me/...), extract number. If number, use it.
-  // For simplify, we'll try to use the raw number if possible or fallback to 'Number' import which works.
-  // Actually, FloatingWhatsApp takes 'phoneNumber' which is a string.
-
+  //****************** */
   return (
     <>
       <FloatingWhatsApp
@@ -64,7 +59,7 @@ export const Contact = () => {
                     </div>
                     <div className="contact-text">
                       <h5>Línea de Atención 1</h5>
-                      <p>{phone}</p>
+                      <p>{phone || dataCompany.phone}</p>
                     </div>
                   </div>
 
@@ -75,7 +70,7 @@ export const Contact = () => {
                     </div>
                     <div className="contact-text">
                       <h5>Línea de Atención 2</h5>
-                      <p>{phone2}</p>
+                      <p>{phone2 || dataCompany.phone2}</p>
                     </div>
                   </div>
 
@@ -86,7 +81,7 @@ export const Contact = () => {
                     </div>
                     <div className="contact-text">
                       <h5>Correo Electrónico</h5>
-                      <p>{email}</p>
+                      <p>{email || dataCompany.email}</p>
                     </div>
                   </div>
 
@@ -97,7 +92,7 @@ export const Contact = () => {
                     </div>
                     <div className="contact-text">
                       <h5>Ubicación Principal</h5>
-                      <p>{address}</p>
+                      <p>{address || dataCompany.address}</p>
                     </div>
                   </div>
                 </div>
@@ -105,39 +100,42 @@ export const Contact = () => {
                 <div className="social-section">
                   <h5>Síguenos en Redes Sociales</h5>
                   <div className="social-icons">
-                    {facebook && (
-                      <a
-                        href={facebook}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="social-btn btn-facebook"
-                        title="Facebook"
-                      >
-                        <i className="fab fa-facebook-f"></i>
-                      </a>
-                    )}
-                    {instagram && (
-                      <a
-                        href={instagram}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="social-btn btn-instagram"
-                        title="Instagram"
-                      >
-                        <i className="fab fa-instagram"></i>
-                      </a>
-                    )}
-                    {tiktok && (
-                      <a
-                        href={tiktok}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="social-btn btn-tiktok"
-                        title="TikTok"
-                      >
-                        <i className="fab fa-tiktok"></i>
-                      </a>
-                    )}
+                    {facebook ||
+                      (dataCompany.facebook && (
+                        <a
+                          href={facebook || dataCompany.facebook}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="social-btn btn-facebook"
+                          title="Facebook"
+                        >
+                          <i className="fab fa-facebook-f"></i>
+                        </a>
+                      ))}
+                    {instagram ||
+                      (dataCompany.instagram && (
+                        <a
+                          href={instagram || dataCompany.instagram}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="social-btn btn-instagram"
+                          title="Instagram"
+                        >
+                          <i className="fab fa-instagram"></i>
+                        </a>
+                      ))}
+                    {tiktok ||
+                      (dataCompany.tiktok && (
+                        <a
+                          href={tiktok || dataCompany.tiktok}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="social-btn btn-tiktok"
+                          title="TikTok"
+                        >
+                          <i className="fab fa-tiktok"></i>
+                        </a>
+                      ))}
                   </div>
                 </div>
               </div>
