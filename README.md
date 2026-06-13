@@ -1,6 +1,6 @@
 # Caminos de Amor 2026
 
-Bienvenido a Caminos de Amor, una aplicación que celebra los caminos del amor en 2026.
+Bienvenido a Caminos de Amor, una web que mustra la empresa que es una funeraria para mascotas.
 
 ## 🚀 Empezando
 
